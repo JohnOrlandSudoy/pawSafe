@@ -9,7 +9,8 @@ import {
   User,
   Shield,
   Bookmark,
-  WifiOff
+  WifiOff,
+  Trash2
 } from 'lucide-react';
 import { MetricCard, Alert, Activity, Route } from '../types';
 import SensorCard from '../components/SensorCard';
@@ -65,10 +66,11 @@ const Dashboard = () => {
   });
   
   const [loading, setLoading] = useState(true);
-  const [currentTime] = useState(new Date());
+  // Replace static date with real-time date
+  const [currentTime, setCurrentTime] = useState(new Date());
   const { currentUser, logout, setCurrentRoute, users } = useAuth();
 
-  // Check if ESP8266 is offline (no data updates in 1 minute)
+  // Check if ESP8266 is offline (no data updates in 20 seconds)
   useEffect(() => {
     // Initialize last data check time if lastUpdated exists
     if (lastUpdated && !lastDataCheck) {
@@ -76,15 +78,15 @@ const Dashboard = () => {
       setEspStatus('online');
     }
     
-    // Set up interval to check ESP status every 10 seconds
+    // Set up interval to check ESP status every 5 seconds
     const checkInterval = setInterval(() => {
       if (lastUpdated) {
         const lastUpdateTime = new Date(lastUpdated);
         const currentTime = new Date();
         const diffInSeconds = (currentTime.getTime() - lastUpdateTime.getTime()) / 1000;
         
-        // If no updates in 60 seconds (1 minute), consider ESP offline
-        if (diffInSeconds > 60) {
+        // If no updates in 20 seconds, consider ESP offline
+        if (diffInSeconds > 20) {
           setEspStatus('offline');
           
           // Create an alert if status changed from online to offline
@@ -92,12 +94,16 @@ const Dashboard = () => {
             createOfflineAlert();
           }
         } else {
+          // If we were offline and now getting updates, set back to online
+          if (espStatus === 'offline') {
+            createOnlineAlert();
+          }
           setEspStatus('online');
         }
         
         setLastDataCheck(currentTime);
       }
-    }, 10000); // Check every 10 seconds
+    }, 5000); // Check every 5 seconds
     
     return () => clearInterval(checkInterval);
   }, [lastUpdated, espStatus]);
@@ -110,7 +116,7 @@ const Dashboard = () => {
         .from('alerts')
         .insert({
           type: 'warning',
-          message: 'ESP8266 microcontroller appears to be offline. No sensor data updates in the last minute.',
+          message: 'ESP8266 microcontroller appears to be offline. No sensor data updates in the last 20 seconds.',
           source: 'system'
         });
         
@@ -119,6 +125,26 @@ const Dashboard = () => {
       }
     } catch (err) {
       console.error('Failed to create offline alert:', err);
+    }
+  };
+  
+  // Function to create an online alert
+  const createOnlineAlert = async () => {
+    try {
+      // Insert alert directly into the alerts table
+      const { error } = await supabase
+        .from('alerts')
+        .insert({
+          type: 'info',
+          message: 'ESP8266 microcontroller is back online and sending data.',
+          source: 'system'
+        });
+        
+      if (error) {
+        console.error('Error creating online alert:', error);
+      }
+    } catch (err) {
+      console.error('Failed to create online alert:', err);
     }
   };
 
@@ -271,7 +297,7 @@ const Dashboard = () => {
     },
   ];
 
-  // Format date
+  // Format date with more options
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { 
       weekday: 'long', 
@@ -281,11 +307,12 @@ const Dashboard = () => {
     });
   };
 
-  // Format time
+  // Format time with seconds
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
-      minute: '2-digit' 
+      minute: '2-digit',
+      second: '2-digit'
     });
   };
 
@@ -297,6 +324,59 @@ const Dashboard = () => {
   const navigateToPets = () => {
     setCurrentRoute(Route.PETS);
   };
+
+  // Function to clear all alerts
+  const clearAllAlerts = async () => {
+    try {
+      // Mark all alerts as resolved in the database
+      const { error } = await supabase
+        .from('alerts')
+        .update({ resolved: true, resolved_at: new Date().toISOString(), resolved_by: currentUser?.id })
+        .is('resolved', false);
+        
+      if (error) throw error;
+      
+      // Log the action
+      await supabase
+        .from('activities')
+        .insert({
+          action: 'cleared all alerts',
+          user_id: currentUser?.id,
+          user_name: currentUser ? currentUser.fullName || currentUser.username : 'System',
+          details: 'Marked all alerts as resolved'
+        });
+    } catch (err) {
+      console.error('Error clearing alerts:', err);
+    }
+  };
+
+  // Function to clear activity history
+  const clearActivityHistory = async () => {
+    try {
+      // We don't actually delete activities, just log that they were viewed/cleared
+      await supabase
+        .from('activities')
+        .insert({
+          action: 'cleared activity history',
+          user_id: currentUser?.id,
+          user_name: currentUser ? currentUser.fullName || currentUser.username : 'System',
+          details: 'Marked all activities as viewed'
+        });
+    } catch (err) {
+      console.error('Error clearing activity history:', err);
+    }
+  };
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
 
   return (
     <div className="animate-fade-in">
@@ -317,11 +397,42 @@ const Dashboard = () => {
           <p className="text-sm text-gray-500">
             Here's what's happening in your facility.
           </p>
-          <div className="mt-2 sm:mt-0 flex items-center space-x-2 text-sm text-gray-500">
-            <Clock className="h-4 w-4" />
-            <span>{formatDate(currentTime)}</span>
-            <span>{formatTime(currentTime)}</span>
+          
+          {/* Enhanced date and time display */}
+          <div className="mt-3 sm:mt-0 bg-gradient-to-r from-blue-50 to-indigo-50 p-2 rounded-lg border border-blue-100 shadow-sm">
+            <div className="flex flex-col items-center sm:flex-row sm:space-x-3">
+              <div className="flex items-center mb-1 sm:mb-0">
+                <Clock className="h-4 w-4 text-blue-600 mr-2" />
+                <span className="text-sm font-medium text-blue-800">{formatTime(currentTime)}</span>
+              </div>
+              <div className="hidden sm:block text-gray-300">|</div>
+              <div className="text-xs text-gray-600">
+                {formatDate(currentTime)}
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* ESP8266 Status Indicator */}
+      <div className="mb-6 flex justify-between items-center">
+        <h3 className="text-lg font-medium text-gray-800">Sensor Readings</h3>
+        <div className={`flex items-center px-3 py-1.5 rounded-full ${
+          espStatus === 'online' 
+            ? 'bg-green-100 text-green-800 border border-green-200' 
+            : 'bg-red-100 text-red-800 border border-red-200'
+        }`}>
+          <div className={`h-2 w-2 rounded-full mr-2 ${
+            espStatus === 'online' ? 'bg-green-500' : 'bg-red-500'
+          }`}></div>
+          <span className="text-xs font-medium">
+            ESP8266 {espStatus === 'online' ? 'Online' : 'Offline'}
+          </span>
+          {espStatus === 'offline' && (
+            <span className="text-xs ml-1 text-red-600">
+              (No data for 20+ seconds)
+            </span>
+          )}
         </div>
       </div>
 
@@ -335,7 +446,7 @@ const Dashboard = () => {
                 ESP8266 Microcontroller Offline
               </p>
               <p className="text-xs text-yellow-600 mt-1">
-                No sensor data updates in the last minute. Please check the device.
+                No sensor data updates in the last 20 seconds. Please check the device.
               </p>
             </div>
           </div>
@@ -368,6 +479,7 @@ const Dashboard = () => {
           <span>Last sensor update: {lastUpdated}</span>
           {espStatus === 'online' && (
             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+              <div className="h-1.5 w-1.5 rounded-full bg-green-500 mr-1"></div>
               ESP8266 Online
             </span>
           )}
@@ -594,3 +706,14 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
+
+
+
+
+
+
+
+
+

@@ -273,6 +273,15 @@ const TopBar = () => {
                 </div>
               )}
             </div>
+            
+            {/* Mobile Sign Out Button */}
+            <button
+              onClick={logout}
+              className="md:hidden flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+              aria-label="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </header>
@@ -353,6 +362,7 @@ const TopBar = () => {
 };
 
 export default TopBar;
+
 
 
 
