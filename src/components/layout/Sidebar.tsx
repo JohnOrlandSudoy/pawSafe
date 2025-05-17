@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, PawPrint as Pawprint, Thermometer, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, PawPrint as Pawprint, Thermometer, LogOut, Activity } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Route } from '../../types';
 
@@ -21,6 +21,11 @@ const Sidebar = () => {
       label: 'Pets', 
       icon: <Pawprint className="h-5 w-5" />, 
       route: Route.PETS 
+    },
+    { 
+      label: 'Pet Monitor', 
+      icon: <Activity className="h-5 w-5" />, 
+      route: Route.PET_MONITOR 
     },
     { 
       label: 'Temperature', 

@@ -77,7 +77,21 @@ const PetsPage = () => {
         return;
       }
       
-      setPets(data || []);
+      // Map the database field is_pregnant to isPregnant in our Pet objects
+      const formattedPets = data?.map(pet => ({
+        id: pet.id,
+        name: pet.name,
+        type: pet.type,
+        breed: pet.breed,
+        gender: pet.gender,
+        isPregnant: pet.is_pregnant === true, // Ensure it's a boolean
+        owner: pet.owner_id,
+        image: pet.image_url,
+        created_at: pet.created_at,
+        updated_at: pet.updated_at
+      })) || [];
+      
+      setPets(formattedPets);
     } catch (err) {
       console.error('Unexpected error fetching pets:', err);
     } finally {
@@ -156,7 +170,8 @@ const PetsPage = () => {
     }
     
     setPetGender(pet.gender);
-    setPetIsPregnant(pet.isPregnant);
+    // Ensure isPregnant is a boolean
+    setPetIsPregnant(pet.isPregnant === true);
     setShowEditModal(true);
   };
 
@@ -230,13 +245,16 @@ const PetsPage = () => {
         ? 'https://images.pexels.com/photos/2253275/pexels-photo-2253275.jpeg?auto=compress&cs=tinysrgb&w=300' 
         : 'https://images.pexels.com/photos/1170986/pexels-photo-1170986.jpeg?auto=compress&cs=tinysrgb&w=300';
       
+      // Make sure isPregnant is explicitly a boolean
+      const isPregnantValue = petGender === 'Female' ? !!petIsPregnant : false;
+      
       // Call the add_pet function to add the pet
       const { data, error } = await supabase.rpc('add_pet', {
         p_name: petName,
         p_type: petType,
         p_breed: finalBreed,
         p_gender: petGender,
-        p_is_pregnant: petGender === 'Female' ? petIsPregnant : false,
+        p_is_pregnant: isPregnantValue, // This matches the parameter name in the add_pet function
         p_image_url: defaultImageUrl
       });
       
@@ -276,13 +294,21 @@ const PetsPage = () => {
     setFormError('');
     setSuccessMessage('');
     
-    if (!validateForm() || !selectedPet) return;
+    if (!selectedPet) {
+      setFormError('No pet selected');
+      return;
+    }
+    
+    if (!validateForm()) return;
     
     setIsSubmitting(true);
     
     try {
       // Determine the final breed value (selected or custom)
       const finalBreed = useCustomBreed ? customBreed : petBreed;
+      
+      // Make sure isPregnant is explicitly a boolean
+      const isPregnantValue = petGender === 'Female' ? !!petIsPregnant : false;
       
       // Update the pet in the database
       const { error } = await supabase
@@ -292,7 +318,7 @@ const PetsPage = () => {
           p_type: petType,
           p_breed: finalBreed,
           p_gender: petGender,
-          p_is_pregnant: petGender === 'Female' ? petIsPregnant : false
+          p_is_pregnant: isPregnantValue // This matches the parameter name in the update_pet function
         });
         
       if (error) {
@@ -453,11 +479,21 @@ const PetsPage = () => {
                         {pet.gender}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span
-                          className={`flex-shrink-0 h-4 w-4 rounded-full ${
-                            pet.isPregnant ? 'bg-green-500' : 'bg-gray-300'
-                          }`}
-                        />
+                        {pet.gender === 'Female' ? (
+                          pet.isPregnant === true ? (
+                            <span className="inline-flex items-center">
+                              <span className="flex-shrink-0 h-4 w-4 rounded-full bg-green-500 mr-2" />
+                              <span className="text-green-700 font-medium">Yes</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center">
+                              <span className="flex-shrink-0 h-4 w-4 rounded-full bg-blue-300 mr-2" />
+                              <span className="text-blue-700 font-medium">No</span>
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-gray-400">N/A</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
@@ -791,17 +827,30 @@ const PetsPage = () => {
                         </div>
                         {petGender === 'Female' && (
                           <div className="mb-4">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id="petIsPregnant"
-                                checked={petIsPregnant}
-                                onChange={(e) => setPetIsPregnant(e.target.checked)}
-                                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                              />
-                              <label htmlFor="petIsPregnant" className="ml-2 block text-sm text-gray-700">
-                                Is Pregnant
-                              </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Pregnancy Status
+                            </label>
+                            <div className="mt-1 grid grid-cols-2 gap-3">
+                              <div
+                                className={`border rounded-md p-3 flex items-center justify-center cursor-pointer ${
+                                  petIsPregnant === true
+                                    ? 'bg-green-50 border-green-500 text-green-700' 
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setPetIsPregnant(true)}
+                              >
+                                <span className="text-lg mr-1">✓</span> Pregnant
+                              </div>
+                              <div
+                                className={`border rounded-md p-3 flex items-center justify-center cursor-pointer ${
+                                  petIsPregnant === false
+                                    ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setPetIsPregnant(false)}
+                              >
+                                <span className="text-lg mr-1">✗</span> Not Pregnant
+                              </div>
                             </div>
                           </div>
                         )}
@@ -891,12 +940,12 @@ const PetsPage = () => {
                         <div>
                           <h4 className="text-sm font-medium text-gray-500">Pregnant</h4>
                           {selectedPet.gender === 'Female' ? (
-                            selectedPet.isPregnant ? (
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-pink-100 text-pink-800">
+                            selectedPet.isPregnant === true ? (
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                 Yes
                               </span>
                             ) : (
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                 No
                               </span>
                             )
@@ -935,3 +984,20 @@ const PetsPage = () => {
 };
 
 export default PetsPage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

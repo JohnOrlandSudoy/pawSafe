@@ -7,6 +7,7 @@ import UsersPage from './pages/UsersPage';
 import PetsPage from './pages/PetsPage';
 import TemperaturePage from './pages/TemperaturePage';
 import ProfilePage from './pages/ProfilePage';
+import PetMonitorPage from './pages/PetMonitorPage';
 import { Route } from './types';
 
 function App() {
@@ -32,6 +33,8 @@ function App() {
         return <UsersPage />;
       case Route.PETS:
         return <PetsPage />;
+      case Route.PET_MONITOR:
+        return <PetMonitorPage />;
       case Route.TEMPERATURE:
         return <TemperaturePage />;
       case Route.PROFILE:
@@ -49,3 +52,4 @@ function App() {
 }
 
 export default App;
+

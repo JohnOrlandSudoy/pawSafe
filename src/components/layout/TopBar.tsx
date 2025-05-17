@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Bell, LayoutDashboard, Users, PawPrint as Pawprint, Thermometer, LogOut, UserCircle } from 'lucide-react';
+import { Menu, X, Bell, LayoutDashboard, Users, PawPrint as Pawprint, Thermometer, LogOut, UserCircle, Activity } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Route } from '../../types';
 import { supabase } from '../../utils/supabase';
@@ -117,6 +117,11 @@ const TopBar = () => {
       route: Route.PETS 
     },
     { 
+      label: 'Pet Monitor', 
+      icon: <Activity className="h-5 w-5" />, 
+      route: Route.PET_MONITOR 
+    },
+    { 
       label: 'Temperature', 
       icon: <Thermometer className="h-5 w-5" />, 
       route: Route.TEMPERATURE 
@@ -129,6 +134,7 @@ const TopBar = () => {
       case Route.DASHBOARD: return 'Dashboard';
       case Route.USERS: return 'User Management';
       case Route.PETS: return 'Pet Management';
+      case Route.PET_MONITOR: return 'Pet Monitoring';
       case Route.TEMPERATURE: return 'Temperature Data';
       case Route.PROFILE: return 'Your Profile';
       default: return 'Dashboard';
@@ -347,4 +353,6 @@ const TopBar = () => {
 };
 
 export default TopBar;
+
+
 

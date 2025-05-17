@@ -5,7 +5,8 @@ export enum Route {
   USERS = 'users',
   PETS = 'pets',
   TEMPERATURE = 'temperature',
-  PROFILE = 'profile'
+  PROFILE = 'profile',
+  PET_MONITOR = 'pet_monitor'
 }
 
 // User types
@@ -82,3 +83,4 @@ export interface HumidityReading {
   timestamp: Date;
   location: string;
 }
+
