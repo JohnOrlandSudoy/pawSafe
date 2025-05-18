@@ -221,34 +221,7 @@ const AuthPage: React.FC = () => {
                 {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Sign Up'}
               </button>
             </div>
-
-            {isLogin && (
-              <div className="text-sm text-center">
-                <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
-                  Forgot your password?
-                </a>
-              </div>
-            )}
           </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Demonstration Account
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-4 text-center text-xs text-gray-600">
-              <p>Use these credentials to sign in:</p>
-              <p className="mt-1">Username: <span className="font-medium">admin</span></p>
-              <p>Password: <span className="font-medium">admin123</span></p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
