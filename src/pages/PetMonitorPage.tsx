@@ -184,9 +184,9 @@ const PetMonitorPage = () => {
   const getThresholds = (pet: Pet) => {
     // Default thresholds
     let thresholds = {
-      mediumFanTemp: 30,
-      highFanTemp: 35,
-      heaterTemp: 27
+      mediumFanTemp: pet.isPregnant ? 0 : 30, // Disable fan if pregnant
+      highFanTemp: pet.isPregnant ? 0 : 35,   // Disable fan if pregnant
+      heaterTemp: pet.isPregnant ? 27 : 0     // Enable heater only if pregnant
     };
     
     const breed = pet.breed.toLowerCase();
@@ -196,9 +196,9 @@ const PetMonitorPage = () => {
       const shortToMediumBreeds = ['aspin', 'corgi', 'chihuahua', 'dachshund', 'pomeranian', 'poodle', 'beagle', 'yorkshire terrier'];
       if (shortToMediumBreeds.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 30,
-          highFanTemp: 35,
-          heaterTemp: 27
+          mediumFanTemp: pet.isPregnant ? 0 : 30, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 35,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 27 : 0     // Enable heater only if pregnant
         };
       }
       
@@ -206,27 +206,19 @@ const PetMonitorPage = () => {
       const flatFacedDogs = ['french bulldog', 'english bulldog', 'american bulldog', 'shih tzu', 'pug'];
       if (flatFacedDogs.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 29,
-          highFanTemp: 33,
-          heaterTemp: 27
+          mediumFanTemp: pet.isPregnant ? 0 : 29, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 33,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 27 : 0     // Enable heater only if pregnant
         };
-      }
-      
-      // If pregnant, adjust thresholds
-      if (pet.isPregnant) {
-        // Lower temperature thresholds for pregnant dogs
-        thresholds.mediumFanTemp -= 1;
-        thresholds.highFanTemp -= 2;
-        thresholds.heaterTemp += 1;
       }
     } else if (pet.type === 'Cat') {
       // Cat breeds (Group 1 - Short to Medium)
       const shortToMediumCats = ['puspin', 'bengal', 'siamese', 'american shorthair', 'russian blue', 'american curl'];
       if (shortToMediumCats.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 34,
-          highFanTemp: 38,
-          heaterTemp: 22
+          mediumFanTemp: pet.isPregnant ? 0 : 34, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 38,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 22 : 0     // Enable heater only if pregnant
         };
       }
       
@@ -234,21 +226,14 @@ const PetMonitorPage = () => {
       const flatFacedCats = ['british shorthair', 'exotic shorthair', 'himalayan', 'persian'];
       if (flatFacedCats.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 34,
-          highFanTemp: 34, // Only high fan setting
-          heaterTemp: 22
+          mediumFanTemp: pet.isPregnant ? 0 : 34, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 34,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 22 : 0     // Enable heater only if pregnant
         };
-      }
-      
-      // If pregnant, adjust thresholds
-      if (pet.isPregnant) {
-        // Lower temperature thresholds for pregnant cats
-        thresholds.mediumFanTemp -= 2;
-        thresholds.highFanTemp -= 3;
-        thresholds.heaterTemp += 2;
       }
     }
     
+    console.log(`Final thresholds for ${pet.name}: mediumFan=${thresholds.mediumFanTemp}, highFan=${thresholds.highFanTemp}, heater=${thresholds.heaterTemp}`);
     return thresholds;
   };
   
@@ -386,6 +371,7 @@ const PetMonitorPage = () => {
 };
 
 export default PetMonitorPage;
+
 
 
 

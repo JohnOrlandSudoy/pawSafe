@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Thermometer, Fan, Flame, Dog, Cat } from 'lucide-react';
+import { Thermometer, Fan, Flame, Dog, Cat, AlertCircle } from 'lucide-react';
 import { Pet } from '../types';
 import { supabase } from '../utils/supabase';
 
@@ -39,9 +39,9 @@ const PetMonitorCard: React.FC<PetMonitorCardProps> = ({ pet, onMonitorStart, is
       const shortToMediumBreeds = ['aspin', 'corgi', 'chihuahua', 'dachshund', 'pomeranian', 'poodle', 'beagle', 'yorkshire terrier'];
       if (shortToMediumBreeds.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 30,
-          highFanTemp: 35,
-          heaterTemp: 0 // Default to disabled
+          mediumFanTemp: pet.isPregnant ? 0 : 30, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 35,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 27 : 0     // Enable heater only if pregnant
         };
       }
       
@@ -49,28 +49,19 @@ const PetMonitorCard: React.FC<PetMonitorCardProps> = ({ pet, onMonitorStart, is
       const flatFacedDogs = ['french bulldog', 'english bulldog', 'american bulldog', 'shih tzu', 'pug'];
       if (flatFacedDogs.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 29,
-          highFanTemp: 33,
-          heaterTemp: 0 // Default to disabled
+          mediumFanTemp: pet.isPregnant ? 0 : 29, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 33,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 27 : 0     // Enable heater only if pregnant
         };
-      }
-      
-      // If pregnant, adjust thresholds and enable heater
-      if (pet.isPregnant) {
-        console.log(`Applying pregnancy thresholds for ${pet.name}`);
-        // Lower temperature thresholds for pregnant dogs
-        thresholds.mediumFanTemp -= 1;
-        thresholds.highFanTemp -= 2;
-        thresholds.heaterTemp = 27; // Only enable heater for pregnant pets
       }
     } else if (pet.type === 'Cat') {
       // Cat breeds (Group 1 - Short to Medium)
       const shortToMediumCats = ['puspin', 'bengal', 'siamese', 'american shorthair', 'russian blue', 'american curl'];
       if (shortToMediumCats.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 34,
-          highFanTemp: 38,
-          heaterTemp: 0 // Default to disabled
+          mediumFanTemp: pet.isPregnant ? 0 : 34, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 38,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 22 : 0     // Enable heater only if pregnant
         };
       }
       
@@ -78,22 +69,14 @@ const PetMonitorCard: React.FC<PetMonitorCardProps> = ({ pet, onMonitorStart, is
       const flatFacedCats = ['british shorthair', 'exotic shorthair', 'himalayan', 'persian'];
       if (flatFacedCats.includes(breed)) {
         thresholds = {
-          mediumFanTemp: 34,
-          highFanTemp: 34, // Only high fan setting
-          heaterTemp: 0 // Default to disabled
+          mediumFanTemp: pet.isPregnant ? 0 : 34, // Disable fan if pregnant
+          highFanTemp: pet.isPregnant ? 0 : 34,   // Disable fan if pregnant
+          heaterTemp: pet.isPregnant ? 22 : 0     // Enable heater only if pregnant
         };
-      }
-      
-      // If pregnant, adjust thresholds and enable heater
-      if (pet.isPregnant) {
-        console.log(`Applying pregnancy thresholds for ${pet.name}`);
-        // Lower temperature thresholds for pregnant cats
-        thresholds.mediumFanTemp -= 2;
-        thresholds.highFanTemp -= 3;
-        thresholds.heaterTemp = 22; // Only enable heater for pregnant pets
       }
     }
     
+    console.log(`Final thresholds for ${pet.name}: mediumFan=${thresholds.mediumFanTemp}, highFan=${thresholds.highFanTemp}, heater=${thresholds.heaterTemp}`);
     return thresholds;
   };
   
@@ -160,21 +143,25 @@ const PetMonitorCard: React.FC<PetMonitorCardProps> = ({ pet, onMonitorStart, is
       </div>
       
       <div className="p-4">
-        <div className={`grid ${pet.isPregnant ? 'grid-cols-3' : 'grid-cols-2'} gap-3 mb-4`}>
-          <div className="bg-blue-50 p-3 rounded-lg flex flex-col items-center">
-            <Fan className="h-5 w-5 text-blue-600 mb-1" />
-            <span className="text-xs text-center text-gray-700">Medium Fan</span>
-            <span className="font-medium text-blue-700">{thresholds.mediumFanTemp}°C+</span>
-          </div>
-          
-          <div className="bg-red-50 p-3 rounded-lg flex flex-col items-center">
-            <Fan className="h-5 w-5 text-red-600 mb-1" />
-            <span className="text-xs text-center text-gray-700">High Fan</span>
-            <span className="font-medium text-red-700">{thresholds.highFanTemp}°C+</span>
-          </div>
+        <div className={`grid ${pet.isPregnant ? 'grid-cols-1' : 'grid-cols-2'} gap-3 mb-4`}>
+          {!pet.isPregnant && (
+            <>
+              <div className="bg-blue-50 p-3 rounded-lg flex flex-col items-center shadow-sm">
+                <Fan className="h-5 w-5 text-blue-600 mb-1" />
+                <span className="text-xs text-center text-gray-700">Medium Fan</span>
+                <span className="font-medium text-blue-700">{thresholds.mediumFanTemp}°C+</span>
+              </div>
+              
+              <div className="bg-red-50 p-3 rounded-lg flex flex-col items-center shadow-sm">
+                <Fan className="h-5 w-5 text-red-600 mb-1" />
+                <span className="text-xs text-center text-gray-700">High Fan</span>
+                <span className="font-medium text-red-700">{thresholds.highFanTemp}°C+</span>
+              </div>
+            </>
+          )}
           
           {pet.isPregnant && (
-            <div className="bg-orange-50 p-3 rounded-lg flex flex-col items-center">
+            <div className="bg-orange-50 p-3 rounded-lg flex flex-col items-center shadow-sm">
               <Flame className="h-5 w-5 text-orange-600 mb-1" />
               <span className="text-xs text-center text-gray-700">Heater</span>
               <span className="font-medium text-orange-700">{thresholds.heaterTemp}°C-</span>
@@ -183,9 +170,13 @@ const PetMonitorCard: React.FC<PetMonitorCardProps> = ({ pet, onMonitorStart, is
         </div>
         
         {pet.gender === 'Female' && (
-          <div className="mb-3 bg-gray-50 text-gray-700 text-xs p-2 rounded-md">
-            Pregnancy Status: {pet.isPregnant ? (
-              <span className="text-pink-700 font-medium">Pregnant</span>
+          <div className="mb-3 bg-gray-50 text-gray-700 text-xs p-2 rounded-md flex items-center">
+            <span className="mr-1">Pregnancy Status:</span> 
+            {pet.isPregnant ? (
+              <span className="text-pink-700 font-medium flex items-center">
+                <span className="h-1.5 w-1.5 rounded-full bg-pink-500 mr-1"></span>
+                Pregnant
+              </span>
             ) : (
               <span className="text-blue-700 font-medium">Not Pregnant</span>
             )}
@@ -193,8 +184,16 @@ const PetMonitorCard: React.FC<PetMonitorCardProps> = ({ pet, onMonitorStart, is
         )}
 
         {pet.isPregnant && (
-          <div className="mb-3 bg-pink-50 text-pink-700 text-xs p-2 rounded-md">
-            Special temperature monitoring active for pregnant pet
+          <div className="mb-3 bg-pink-50 text-pink-700 text-xs p-2 rounded-md flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1" />
+            Heater active for pregnant pet (fan disabled)
+          </div>
+        )}
+        
+        {!pet.isPregnant && (
+          <div className="mb-3 bg-blue-50 text-blue-700 text-xs p-2 rounded-md flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1" />
+            Fan active for non-pregnant pet (heater disabled)
           </div>
         )}
         
@@ -227,11 +226,5 @@ const PetMonitorCard: React.FC<PetMonitorCardProps> = ({ pet, onMonitorStart, is
 };
 
 export default PetMonitorCard;
-
-
-
-
-
-
 
 
